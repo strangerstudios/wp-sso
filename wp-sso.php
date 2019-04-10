@@ -44,13 +44,13 @@ function wpsso_authenticate( $username, $password ) {
 	$user = get_user_by( 'login', $username );
 	
 	// Check by email if needed.
-	if ( empty( $user_good ) ) {
+	if ( empty( $user ) ) {
 		$user = get_user_by( 'email', $username );
 	}
-	
+		
 	// If we have a user, check the password
 	if ( ! empty( $user ) && ! empty( $user->ID ) ) {
-		$password_works = wp_check_password( $password, $user->user_pass, $user->ID );
+		$password_works = wp_check_password( $password, $user->user_pass, $user->ID );		
 	} else {
 		$password_works = false;
 	}
@@ -64,14 +64,47 @@ function wpsso_authenticate( $username, $password ) {
 			),
 		);
 		$response = wp_remote_get( $url, $args );
-		d($response);
-		
-		// If logged in, create user and login should work
-		
-		// If not, continue and login should fail
+				
+		// Only process if request is successful (200 OK)
+		if ( ! empty ( $response ) 
+			&& ! empty( $response['response'] ) 
+			&& $response['response']['code'] == '200' ) {
+			
+			// Check API response
+			$remote_user = json_decode( $response['body'] );
+						
+			if ( $remote_user->success == true ) {
+				// If logged in, create user
+				$new_user_array = array(
+					'user_login' => $username,
+					'user_pass'  => $password,					
+					'user_email' => $remote_user->user_email,
+					'role'		 => get_option( 'default_role', 'subscriber' ),
+					'first_name' => $remote_user->first_name,
+					'last_name'  => $remote_user->last_name,					
+				);
+
+				$user_id = wp_insert_user( $new_user_array );
+				
+				// If user creation works, log them in.
+				if ( ! empty( $user_id ) ) {					
+					$creds                  = array();
+					$creds['user_login']    = $new_user_array['user_login'];
+					$creds['user_password'] = $new_user_array['user_pass'];
+					$creds['remember']      = true;
+					$user                   = wp_signon( $creds, false );
+					
+					wp_set_current_user( $user_id, $username );
+					wp_set_auth_cookie( $user_id, true, force_ssl_admin() );
+				}
+			} else {
+				// Remote login failed.
+				// Login on local site should fail too.
+			}
+		}
 	}	
 }
-//add_action( 'wp_authenticate', 'wpsso_authenticate', 1, 2);
+add_action( 'wp_authenticate', 'wpsso_authenticate', 1, 2);
 
 /**
  * This is our callback function that embeds our phrase in a WP_REST_Response
@@ -80,10 +113,26 @@ function wpsso_get_endpoint_check() {
 	global $current_user;
 	
 	if ( ! empty( $current_user ) && ! empty( $current_user->user_login ) ) {
-		$r = rest_ensure_response( sprintf( 'Logged in as %s', $current_user->user_login ) );
+		$r = array(
+			'success' => true,
+			'message' => sprintf( 'Logged in as %s', $current_user->user_login ),
+			'user_login' => $current_user->user_login,
+			'user_email' => $current_user->user_email,
+			'first_name' => $current_user->first_name,
+			'last_name' => $current_user->last_name,
+		);		
 	} else {
-		$r = rest_ensure_response( 'Not logged in.' );
+		$r = array(
+			'success' => false,
+			'message' => 'Not logged in.',
+			'user_email' => null,
+			'user_login' => $current_user->user_login,
+			'first_name' => null,
+			'last_name' => null,
+		);		
 	}
+	
+	$r = rest_ensure_response( $r );
 	
 	return $r;
 }
