@@ -10,6 +10,11 @@
  */
 
 define( 'WP_SSO_VERSION', .1 );
+define( 'WP_SSO_DIR', dirname( __FILE__ ) );
+define( 'WP_SSO_BASENAME', plugin_basename( __FILE__ ) );
+
+// Add Basic Authentication for our end points.
+require_once( WP_SSO_DIR . '/includes/basic-auth.php' );
 
 /*
 	SSO Server
