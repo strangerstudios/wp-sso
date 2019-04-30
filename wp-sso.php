@@ -14,7 +14,9 @@ define( 'WP_SSO_DIR', dirname( __FILE__ ) );
 define( 'WP_SSO_BASENAME', plugin_basename( __FILE__ ) );
 
 // Add Basic Authentication for our end points.
+require_once( WP_SSO_DIR . '/includes/admin.php' );
 require_once( WP_SSO_DIR . '/includes/basic-auth.php' );
+require_once( WP_SSO_DIR . '/includes/settings.php' );
 
 /*
 	SSO Server
@@ -35,9 +37,16 @@ require_once( WP_SSO_DIR . '/includes/basic-auth.php' );
  * Intercept authentication to checkin with server if needed.
  */
 function wpsso_authenticate( $username, $password ) {	
+	$options = wpsso_get_options();
+	
+	// If client is not enabled, bail.
+	if ( ! $options['client'] ) {
+		return;
+	}
+	
 	// Avoid loops when authenticating over API
 	if ( defined( 'REST_REQUEST' ) && REST_REQUEST == true ) {
-		return $user;
+		return;
 	}
 		
 	// If no username or password, bail.
@@ -62,7 +71,13 @@ function wpsso_authenticate( $username, $password ) {
 	
 	// If no user or password is not going to work, then try the server API
 	if ( $password_works === false ) {		
-		$url = 'https://dev.paidmembershipspro.com/wp-json/wp-sso/v1/check';		
+		$url = $options['host_url'];
+		
+		// If URL is not set, bail.
+		if ( empty( $url ) ) {
+			return;
+		}
+		
 		$args = array(
 			'headers' => array(
 				'Authorization' => 'Basic ' . base64_encode( $username . ':' . $password ),
@@ -146,7 +161,14 @@ function wpsso_get_endpoint_check() {
  * This function is where we register our routes for our example endpoint.
  */
 function wpsso_register_example_routes() {    
-    register_rest_route( 
+    $options = wpsso_get_options();
+	
+	// Make sure host option is enabled.
+	if ( ! $options['host'] ) {
+		return;
+	}
+	
+	register_rest_route( 
 		'wp-sso/v1',
 		'/check',
 		array(        
