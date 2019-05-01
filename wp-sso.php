@@ -94,19 +94,30 @@ function wpsso_authenticate( $username, $password ) {
 			$remote_user = json_decode( $response['body'] );
 						
 			if ( $remote_user->success == true ) {
-				// If logged in, create user
-				$new_user_array = array(
-					'user_login' => $username,
-					'user_pass'  => $password,					
-					'user_email' => $remote_user->user_email,
-					'role'		 => get_option( 'default_role', 'subscriber' ),
-					'first_name' => $remote_user->first_name,
-					'last_name'  => $remote_user->last_name,					
-				);
+				// Remote login worked. Create or update user.								
+				if ( empty( $user ) || empty( $user->ID ) ) {
+					// Create user on client site.
+					$new_user_array = array(
+						'user_login' => $username,
+						'user_pass'  => $password,					
+						'user_email' => $remote_user->user_email,
+						'role'		 => get_option( 'default_role', 'subscriber' ),
+						'first_name' => $remote_user->first_name,
+						'last_name'  => $remote_user->last_name,					
+					);
 
-				$user_id = wp_insert_user( $new_user_array );
+					$user_id = wp_insert_user( $new_user_array );										
+				} else {
+					// Update user on client site.
+					if ( user_can( $user, 'manage_options' ) ) {
+						return;	// We don't want to update passwords for admins
+					}
+					
+					$user_id = $user->ID;
+					wp_set_password( $password, $user_id );					
+				}
 				
-				// If user creation works, log them in.
+				// Log the user in.
 				if ( ! empty( $user_id ) ) {					
 					$creds                  = array();
 					$creds['user_login']    = $new_user_array['user_login'];
