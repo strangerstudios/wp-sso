@@ -171,7 +171,7 @@ function wpsso_get_endpoint_check() {
 /**
  * This function is where we register our routes for our example endpoint.
  */
-function wpsso_register_example_routes() {    
+function wpsso_register_routes() {    
     $options = wpsso_get_options();
 	
 	// Make sure host option is enabled.
@@ -188,5 +188,5 @@ function wpsso_register_example_routes() {
 		)
 	);
 }
-add_action( 'rest_api_init', 'wpsso_register_example_routes' );
+add_action( 'rest_api_init', 'wpsso_register_routes' );
 
