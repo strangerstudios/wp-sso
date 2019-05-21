@@ -140,7 +140,7 @@ add_action( 'wp_authenticate', 'wpsso_authenticate', 1, 2);
 /**
  * This is our callback function that embeds our phrase in a WP_REST_Response
  */
-function wpsso_get_endpoint_check() {
+function wpsso_check_authentication_endpoint() {
 	global $current_user;
 	
 	if ( ! empty( $current_user ) && ! empty( $current_user->user_login ) ) {
@@ -184,7 +184,7 @@ function wpsso_register_routes() {
 		'/check',
 		array(        
 			'methods'  => WP_REST_Server::READABLE,        
-			'callback' => 'wpsso_get_endpoint_check',
+			'callback' => 'wpsso_check_authentication_endpoint',
 		)
 	);
 }
