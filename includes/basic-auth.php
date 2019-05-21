@@ -12,6 +12,11 @@ function wpsso_json_basic_auth_handler( $user ) {
 
 	$wp_json_basic_auth_error = null;
 
+	// Don't run if not using SSL
+	if ( ! is_ssl() ) {
+		return $user;
+	}
+	
 	// Don't run unless using our route.	
 	if ( ! empty( $_REQUEST['rest_route'] ) ) {
 		$rest_route = '/' . rest_get_url_prefix() . $_REQUEST['rest_route'];
