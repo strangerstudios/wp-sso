@@ -2,8 +2,8 @@
 Contributors: strangerstudios
 Tags: authentication, sso, single sign on
 Requires at least: 5
-Tested up to: 5.1.1
-Stable tag: .1
+Tested up to: 6.0.1
+Stable tag: .1.1
 
 Connect multiple non-multisite WordPress sites together to share logins.
 
@@ -40,5 +40,9 @@ New users are given the default role on the client site. This role should be "Su
 Now users from the host site will be able to log into the client sites with the same username and passwords.
 
 == Changelog ==
+= .1.1 - 2022-07-22 =
+* BUG FIX: Updated Basic Authentication code to support subfolder multisite installs.
+* ENHANCEMENT: Handling WP_Error results when attempting to connect to the host.
+
 = .1 =
 * Initial commit.
