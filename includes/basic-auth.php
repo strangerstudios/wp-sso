@@ -7,7 +7,7 @@
 /**
  * Check for Basic Authentication headers.
  */
-function wpsso_json_basic_auth_handler( $user ) {
+function wpsso_json_basic_auth_handler( $user ) {	
 	global $wp_json_basic_auth_error;
 
 	$wp_json_basic_auth_error = null;
@@ -18,12 +18,20 @@ function wpsso_json_basic_auth_handler( $user ) {
 	}
 	
 	// Don't run unless using our route.	
+	// NOTE: Figure out why this isn't being set in $_REQUEST anymore.
 	if ( ! empty( $_REQUEST['rest_route'] ) ) {
 		$rest_route = '/' . rest_get_url_prefix() . $_REQUEST['rest_route'];
 	} else {
 		$rest_route = $_SERVER['REQUEST_URI'];
 	}
-	if ( $rest_route != '/' . rest_get_url_prefix() . '/wp-sso/v1/check' ) {
+	/*
+		NOTE: This new strpos check could open up an attack
+		where this string is pased as a parameter to a different API call.
+		To support subfolder multisites, we need to get the path of the subsite
+		and append that to the string we're testing against the $rest_route.
+		Then we can test if it === the $rest_route specifically.
+	*/
+	if ( strpos( $rest_route, '/' . rest_get_url_prefix() . '/wp-sso/v1/check' ) === false ) {
 		return $user;
 	}
 
