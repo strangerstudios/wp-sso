@@ -87,6 +87,7 @@ function wpsso_authenticate( $username, $password ) {
 				
 		// Only process if request is successful (200 OK)
 		if ( ! empty ( $response ) 
+			&& ! is_wp_error( $response )
 			&& ! empty( $response['response'] ) 
 			&& $response['response']['code'] == '200' ) {
 			
@@ -131,6 +132,14 @@ function wpsso_authenticate( $username, $password ) {
 			} else {
 				// Remote login failed.
 				// Login on local site should fail too.
+				if ( is_wp_error( $response ) ) {
+					$msgt = 'pmpro_error';
+					$message = $response->get_error_message();					
+				} else {
+					$msgt = 'pmpro_error';
+					$message = __( 'Error loggin in. Unknown error.', 'wp-sso' );
+				}
+				echo '<div class="' . pmpro_get_element_class( 'pmpro_message ' . $msgt, esc_attr( $msgt ) ) . '">'. wp_kses_post( $message ) .'</div>';
 			}
 		}
 	}	
