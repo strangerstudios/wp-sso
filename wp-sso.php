@@ -94,7 +94,7 @@ function wpsso_authenticate( $username, $password ) {
 			// Check API response
 			$remote_user = json_decode( $response['body'] );
 						
-			if ( $remote_user->success == true ) {
+			if ( ! empty( $remote_user ) && ! empty( $remote_user->success) && $remote_user->success == true ) {
 				// Remote login worked. Create or update user.								
 				if ( empty( $user ) || empty( $user->ID ) ) {
 					// Create user on client site.
